@@ -5,6 +5,14 @@
     <artifactId>RPNJavaConsole</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
+    
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    
     <dependencies>
         <dependency>
             <groupId>com.google.re2j</groupId>
@@ -12,13 +20,13 @@
             <version>1.6</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>com.github.ReversePolishNotationITProject</groupId>
             <artifactId>LambdaExpressionInterpreter</artifactId>
-            <version>${project.version}</version>
+            <version>main-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
-                    <groupId>AnhKhoaPham</groupId>
-                    <artifactId>LambdaCalculus</artifactId>
+                    <groupId>com.github.ReversePolishNotationITProject</groupId>
+                    <artifactId>LambdaCalculusJava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -28,10 +36,9 @@
             <version>3.13.0</version>
         </dependency>
         <dependency>
-            <groupId>AnhKhoaPham</groupId>
-            <artifactId>LambdaCalculus</artifactId>
-            <version>0.1-SNAPSHOT</version>
-            <type>jar</type>
+            <groupId>com.github.ReversePolishNotationITProject</groupId>
+            <artifactId>LambdaCalculusJava</artifactId>
+            <version>main-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <properties>
