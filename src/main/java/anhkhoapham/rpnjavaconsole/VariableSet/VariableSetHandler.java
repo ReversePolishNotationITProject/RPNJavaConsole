@@ -5,14 +5,13 @@
 package anhkhoapham.rpnjavaconsole.VariableSet;
 
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
-import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.External.ExternalLambdaTreeParser;
+import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.ExternalLambdaTreeParser;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpreter;
-import anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCARD;
+import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
 
 /**
  *
@@ -32,6 +31,12 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
         
         this.builtIn = builtIns;
         this.interpreter = interpreter;
+    }
+    
+    @SuppressWarnings("ReturnOfCollectionOrArrayField")
+    public Map<String, LambdaTermRoot> getVariables()
+    {
+        return variables;
     }
     
     public boolean contains(String varName)
@@ -73,6 +78,15 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
         variables.remove(varName);
     }
     
+    public String removeAll()
+    {
+        if (variables.isEmpty()) return "No variables to remove.";
+        
+        variables.clear();
+        
+        return "Delete all mutable variables.";
+    }
+    
     public String listVariables(String option)
     {
         var buffer = new StringBuilder(99);
@@ -107,6 +121,7 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
     /**
      *
      * @param input the value of input
+     * @return 
      * @throws IllegalArgumentException
      */
     @Override
@@ -154,5 +169,10 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
             throw new IllegalArgumentException("Cannot get value from discard.");
         
         throw new IllegalArgumentException(varName + " cannot be found.");
+    }
+
+    @Override
+    public LambdaTermRoot getMissing(String varName) throws IllegalArgumentException {
+        return get(varName);
     }
 }

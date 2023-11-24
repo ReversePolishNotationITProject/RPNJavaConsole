@@ -14,5 +14,7 @@ public final class SpecialSymbols {
     
     public final static String DISCARD = "_";
     
+    public final static char PARAMETER = '/';
+    
     private SpecialSymbols() {}
 }

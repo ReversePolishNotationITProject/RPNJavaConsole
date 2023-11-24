@@ -43,6 +43,10 @@ public class LambdaTermRefRoot implements LambdaTermRoot {
         return showRef? "ref " : "" + variableName;
     }
 
+    public String revert() {
+        return "{" + (showRef? "ref " : "") + variableName + "}";
+    }
+    
     @Override
     public LambdaTermExpressionNode topNode() {
         return root().topNode();

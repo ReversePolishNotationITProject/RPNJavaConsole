@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package anhkhoapham.rpnjavaconsole.Parsers;
+package anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author Khoapa
  */
-public final class RPNToPNRaw {
+public final class RPNToReversedRPN {
     
     public static List<String> translate(List<String> rpn)
     {
@@ -36,5 +36,5 @@ public final class RPNToPNRaw {
         
         return tokens;
     }
-    private RPNToPNRaw() {}
+    private RPNToReversedRPN() {}
 }

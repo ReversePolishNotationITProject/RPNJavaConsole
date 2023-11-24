@@ -15,15 +15,23 @@ import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionClassicInterprete
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpretationHandler;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpretationHandlerImpl;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpreter;
+import anhkhoapham.rpnjavaconsole.CommandLine.CommandsUtil;
 import anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandMapper;
 import anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommands;
 import anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandsImpl;
-import anhkhoapham.rpnjavaconsole.Parsers.BuiltInVariablesInjector;
-import anhkhoapham.rpnjavaconsole.Parsers.InfixToRPNRaw;
-import anhkhoapham.rpnjavaconsole.Parsers.LambdaExpressionSpecialTokenResolver;
+import anhkhoapham.rpnjavaconsole.Parsers.Groupings.LambdaExpressionParsingHandlers;
+import anhkhoapham.rpnjavaconsole.Parsers.Groupings.VariablesAndSpecialTokensHandlers;
+import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermNodeConcatenatedSerializer;
+import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.InfixToRPNRaw;
+import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionNotationTranslator;
+import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionSpecialTokenResolver;
+import anhkhoapham.rpnjavaconsole.Parsers.VariablesHandler.BuiltInVariablesInjector;
 import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
+import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInRoot;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInVariables;
 import anhkhoapham.rpnjavaconsole.VariableSet.VariableSetHandler;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -31,47 +39,161 @@ import java.util.function.Function;
  * @author Khoapa
  */
 public final class CommandMapperBuilder {
-
     private final static Function<String, String> commandMapper = buildCommandMapper();
+    private static LambdaTermNodeBuilder nodeBuilder;
+    private static LambdaExpressionParser stringParser;
+    private static Map<String, BuiltInRoot> builtin;
+    private static LambdaExpressionInterpreter interpreter;
+    private static LambdaExpressionInterpretationHandler interpretationHandler;
+    private static VariableSetHandler importer;
+    private static LambdaExpressionTokenHandler pnParser;
+    private static LambdaExpressionTokenHandler reversedRPNParser;
+    private static LambdaExpressionSpecialTokenResolver resolver;
+    private static LambdaExpressionNotationTranslator translator;
+    private static LambdaCalculusCommands commands;
+    
+    /**
+     * @return the nodeBuilder
+     */
+    public static LambdaTermNodeBuilder getNodeBuilder() {
+        return nodeBuilder;
+    }
 
+    /**
+     * @return the stringParser
+     */
+    public static LambdaExpressionParser getStringParser() {
+        return stringParser;
+    }
+
+    /**
+     * @return the interpreter
+     */
+    public static LambdaExpressionInterpreter getInterpreter() {
+        return interpreter;
+    }
+
+    /**
+     * @return the interpretationHandler
+     */
+    public static LambdaExpressionInterpretationHandler getInterpretationHandler() {
+        return interpretationHandler;
+    }
+
+    /**
+     * @param aInterpretationHandler the interpretationHandler to set
+     */
+    public static void setInterpretationHandler(LambdaExpressionInterpretationHandler aInterpretationHandler) {
+        interpretationHandler = aInterpretationHandler;
+    }
+
+    /**
+     * @return the importer
+     */
+    public static VariableSetHandler getImporter() {
+        return importer;
+    }
+
+    /**
+     * @param aImporter the importer to set
+     */
+    public static void setImporter(VariableSetHandler aImporter) {
+        importer = aImporter;
+    }
+
+    /**
+     * @return the pnParser
+     */
+    public static LambdaExpressionTokenHandler getPNParser() {
+        return pnParser;
+    }
+
+    /**
+     * @return the reversedRPNParser
+     */
+    public static LambdaExpressionTokenHandler getReversedRPNParser() {
+        return reversedRPNParser;
+    }
+
+    /**
+     * @return the resolver
+     */
+    public static LambdaExpressionSpecialTokenResolver getResolver() {
+        return resolver;
+    }
+
+    /**
+     * @return the commands
+     */
+    public static LambdaCalculusCommands getCommands() {
+        return commands;
+    }
+
+            
     public static Function<String, String> getCommandMapper() {
         return commandMapper;
     }
-          
+    
     private static Function<String, String> buildCommandMapper()
     {
-        LambdaTermNodeBuilder nodeBuilder = LambdaTermNodeBuiltInBuilder.get();
+        nodeBuilder = LambdaTermNodeBuiltInBuilder.get();
         
-        LambdaExpressionParser stringParser = new LambdaExpressionExternalTreePorterParser();
+        stringParser = new LambdaExpressionExternalTreePorterParser();
         
-        var builtin = new BuiltInVariables(stringParser).readOnlyDict();
+        builtin = new BuiltInVariables(stringParser).readOnlyDict();
         
-        LambdaExpressionInterpreter interpreter = new LambdaExpressionClassicInterpreter(stringParser, nodeBuilder);
+        interpreter = new LambdaExpressionClassicInterpreter(stringParser, nodeBuilder);
         
-        LambdaExpressionInterpretationHandler interpretationHandler = new LambdaExpressionInterpretationHandlerImpl(interpreter);
+        interpretationHandler = new LambdaExpressionInterpretationHandlerImpl(interpreter);
         
-        VariableSetHandler importer = new VariableSetHandler(builtin, interpreter);
+        importer = new VariableSetHandler(builtin, interpreter);
         
-        LambdaExpressionTokenHandler pnParser = new LambdaExpressionExternalTreePorterParser(importer);
+        pnParser = new LambdaExpressionExternalTreePorterParser(importer);
         
-        LambdaExpressionTokenHandler reversedRPNParser = new LambdaExpressionExternalTreePorterParser(
+        reversedRPNParser = new LambdaExpressionExternalTreePorterParser(
                 importer,
                 LambdaTermNodeBuiltInBuilder.get(),
                 () -> new LinkedListStack<LambdaTermExpressionNode>());
         
-        LambdaExpressionSpecialTokenResolver resolver = new BuiltInVariablesInjector(builtin);
+        resolver = new BuiltInVariablesInjector(builtin);
         
-        LambdaCalculusCommands commands = new LambdaCalculusCommandsImpl(
-                reversedRPNParser,
+        translator = new InfixToRPNRaw(builtin);
+       
+        var parsers = new LambdaExpressionParsingHandlers(
                 pnParser,
+                reversedRPNParser,
+                LambdaTermNodeConcatenatedSerializer.getPNSerializer(),
+                LambdaTermNodeConcatenatedSerializer.getRPNSerializer()
+        );
+        
+        var specialTokenHandlers = new VariablesAndSpecialTokensHandlers(
                 resolver,
                 interpretationHandler,
-                importer, 
-                new InfixToRPNRaw(builtin));
+                importer,
+                getTranslator(),
+                new TokenSplitter()
+        );
+        
+        commands = new LambdaCalculusCommandsImpl(
+                parsers, specialTokenHandlers, CommandsUtil.getHelpTextMap());
                
         Function<String, String> result = new LambdaCalculusCommandMapper(commands, new TokenSplitter());
         
         return result;
+    }
+
+    /**
+     * @return the builtin
+     */
+    public static Map<String, BuiltInRoot> getBuiltin() {
+        return Collections.unmodifiableMap(builtin);
+    }
+
+    /**
+     * @return the translator
+     */
+    public static LambdaExpressionNotationTranslator getTranslator() {
+        return translator;
     }
     private CommandMapperBuilder() {
     }

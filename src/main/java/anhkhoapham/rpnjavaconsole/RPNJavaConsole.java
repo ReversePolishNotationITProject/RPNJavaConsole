@@ -22,9 +22,11 @@ public class RPNJavaConsole {
         
         for(var value : result)
         {
-            System.out.println(value);
+            //System.out.println(value);
         }
 
+        System.out.println("Reverse Polish Notation Console.");
+        
         Function<String, String> commandInput = CommandMapperBuilder.getCommandMapper();
         
         try (Scanner scanner = new Scanner(System.in)) {

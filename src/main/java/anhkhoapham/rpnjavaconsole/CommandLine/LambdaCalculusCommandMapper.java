@@ -4,13 +4,14 @@
  */
 package anhkhoapham.rpnjavaconsole.CommandLine;
 
-import static anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandsEnum.delete;
-import static anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandsEnum.list;
-import static anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandsEnum.parse;
-import static anhkhoapham.rpnjavaconsole.CommandLine.LambdaCalculusCommandsEnum.print;
+import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnInfixNotationSelection;
+import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnNotationSelection;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
 import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -22,12 +23,16 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
     
     private final LambdaCalculusCommands commands;
     private final TokenSplitter splitter;
+    private final Map<String, Function<List<String>, String>> commandMap;
+    
     public LambdaCalculusCommandMapper(LambdaCalculusCommands commands, TokenSplitter splitter) {
         if (commands == null) throw new IllegalArgumentException("commands is null.");
         if (splitter == null) throw new IllegalArgumentException("splitter is null.");
         
         this.commands = commands;
         this.splitter = splitter;
+        
+        commandMap = createCommandMap();
     }
 
     @Override
@@ -42,13 +47,9 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         {
             var command = firstToken.substring(1, firstToken.length());
             
-            var enumConversion = LambdaCalculusCommandsEnum.TryParse(command);
+            if (!commandMap.containsKey(command)) return CommandsUtil.getCommandNotExistText(command);
             
-            if (enumConversion.isEmpty())
-                
-                return "Command \"" + command + "\" not found.";
-            
-            return handleCommands(enumConversion.get(), tokens);
+            return commandMap.get(command).apply(tokens);
         }
         else
         {
@@ -59,30 +60,22 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         }        
     }
     
-    private String handleCommands(LambdaCalculusCommandsEnum command, List<String> originalTokens)
+    private Map<String, Function<List<String>, String>> createCommandMap()
     {
-        switch (command)
-        {                
-            case print -> {
-                return handlePrintOverload(originalTokens);                
-            }
-            case list -> {
-                return handleList(originalTokens);
-            }
-            case parse -> {
-                return handleParse(originalTokens);             
-            }
-            case delete -> {
-                return handleDelete(originalTokens);
-            }
-            case help -> {
-                return commands.help();
-            }
-            default -> {
-                return "\"" + command + "\" exists but does not have an implementation yet.";
-            }        
-        }
+        Map<String, Function<List<String>, String>> map = HashMap.newHashMap(7);
+        
+        map.put("print", tokens -> handlePrintOverload(tokens));
+        map.put("list", tokens -> handleList(tokens));
+        map.put("parse", tokens -> handleParse(tokens));
+        map.put("delete", tokens -> handleDelete(tokens));
+        map.put("help", tokens -> handleHelp(tokens));
+        map.put("import", tokens -> commands.importFile(tokens.get(1)));
+        map.put("export", tokens -> commands.exportFile(tokens.get(1)));
+        map.put("notation", tokens -> handleNotation(tokens));
+        
+        return map;
     }
+    
     
     private String handlePrintOverload(List<String> originalTokens)
     {
@@ -133,6 +126,11 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         if (originalTokens.size() != 2) 
             return "ERROR: Unexpected argument length for command \"delete\", expected 1 argument.";
         
+        if (originalTokens.get(1).charAt(0) == DISCRIMINATOR)
+            if (originalTokens.get(1).equals(DISCRIMINATOR + "all"))
+                return commands.deleteAll();
+            else return CommandsUtil.getCommandNotExistText(originalTokens.get(1));
+        
         return commands.delete(originalTokens.get(1));
     }
     
@@ -144,5 +142,68 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         var result = commands.set(originalTokens.get(0), originalTokens.subList(2, originalTokens.size()));
         
         return result.isPresent() ? result.get() : "";
+    }
+    
+    private String handleHelp(List<String> originalTokens)
+    {
+        if (originalTokens.size() > 2) 
+            return "ERROR: Unexpected argument length for command \"help\", expected 0 - 1 arguments.";
+        
+        if (originalTokens.size() == 1)
+            return commands.help();
+        
+        return commands.help(originalTokens.get(1));
+    }
+    
+    private String handleNotation(List<String> originalTokens)
+    {
+        if (originalTokens.size() != 3) 
+            return "ERROR: Unexpected argument length for command \"notation\", expected 2 arguments.";
+        
+        if (originalTokens.get(1).charAt(0) != DISCRIMINATOR) return "Expected \'" + DISCRIMINATOR + "\'.";
+        if (originalTokens.get(2).charAt(0) != DISCRIMINATOR) return "Expected \'" + DISCRIMINATOR + "\'.";    
+                
+        var flowToken = originalTokens.get(1).substring(1);
+        
+        var notationToken = originalTokens.get(2).substring(1);
+        
+     
+        switch (flowToken)
+        {
+            case "input" ->
+            {              
+                Consumer<PnRpnInfixNotationSelection> notationSelector;
+                
+                switch (notationToken) {
+                    case "PN" -> notationSelector = i -> i.PN();
+                    case "infix" -> notationSelector = i -> i.infix();
+                    case "RPN" -> notationSelector = i -> i.RPN();
+                    default -> {
+                        return "Notation \"" + originalTokens.get(2) + "\" not found.";
+                    }
+                }
+                               
+                commands.notation(i -> i.input(notationSelector));
+            }
+            case "output" ->
+            {
+                Consumer<PnRpnNotationSelection> notationSelector;
+                
+                switch (notationToken) {
+                    case "PN" -> notationSelector = i -> i.PN();
+                    case "RPN" -> notationSelector = i -> i.RPN();
+                    default -> {
+                        return "Notation \"" + originalTokens.get(2) + "\" not found.";
+                    }
+                }
+                              
+                commands.notation(i -> i.output(notationSelector));
+            }
+            default -> { 
+                return "Option \"" + DISCRIMINATOR + flowToken + "\" not found.";
+            }
+        }
+        
+        return "Successfully set notation of " + flowToken + " to " + notationToken + "."; 
     }
 }

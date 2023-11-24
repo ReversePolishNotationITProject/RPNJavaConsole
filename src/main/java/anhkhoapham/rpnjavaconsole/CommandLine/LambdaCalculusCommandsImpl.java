@@ -6,13 +6,28 @@ package anhkhoapham.rpnjavaconsole.CommandLine;
 
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
 import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.LambdaExpressionTokenHandler;
-import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpretationHandler;
-import anhkhoapham.rpnjavaconsole.Parsers.LambdaExpressionNotationTranslator;
-import anhkhoapham.rpnjavaconsole.Parsers.LambdaExpressionSpecialTokenResolver;
+import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.InputOutputNotationSelection;
+import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnInfixNotationSelection;
+import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnNotationSelection;
+import anhkhoapham.rpnjavaconsole.Parsers.Groupings.LambdaExpressionParsingHandlers;
+import anhkhoapham.rpnjavaconsole.Parsers.Groupings.VariablesAndSpecialTokensHandlers;
+import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermNodeSerializer;
+import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil;
+import static anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil.TokenIterableToString;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
-import anhkhoapham.rpnjavaconsole.VariableSet.VariableSetHandler;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  *
@@ -21,36 +36,79 @@ import java.util.Optional;
 public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
 
 
-    private final LambdaExpressionTokenHandler reversedRPNParser;
-    private final LambdaExpressionTokenHandler pnParser;
-    private final LambdaExpressionSpecialTokenResolver resolver;
+    private final LambdaExpressionParsingHandlers parsing;
+    private final VariablesAndSpecialTokensHandlers specialTokenHandlers;
+    private final Map<String, String> helpTexts;
+
+    private Function<List<String>, LambdaTermRoot> activeDeserializer;
+    private LambdaTermNodeSerializer activeSerializer;
     
-    private final LambdaExpressionInterpretationHandler interpretationHandler;
-    private final VariableSetHandler variables;
-    private final LambdaExpressionNotationTranslator notationTranslator;
+    private final Function<List<String>, LambdaTermRoot> pnDeserializer;
+    private final Function<List<String>, LambdaTermRoot> rpnDeserializer;   
+    private final Function<List<String>, LambdaTermRoot> infixDeserializer;
+
+    private final PnRpnInfixNotationSelection inputSelector = new PnRpnInfixNotationSelection() {
+        @Override
+        public void infix() {
+            activeDeserializer = infixDeserializer;
+        }
+
+        @Override
+        public void PN() {
+            activeDeserializer = pnDeserializer;
+        }
+
+        @Override
+        public void RPN() {
+            activeDeserializer = rpnDeserializer;
+        }
+    };
+
+    private final PnRpnNotationSelection outputSelector = new PnRpnNotationSelection() {
+        @Override
+        public void PN() {
+            activeSerializer = parsing.pnSerializer();
+        }
+
+        @Override
+        public void RPN() {
+            activeSerializer = parsing.RPNSerializer();
+        }
+    };
     
-    public LambdaCalculusCommandsImpl(LambdaExpressionTokenHandler reversedRPNParser,
-            LambdaExpressionTokenHandler parser,
-            LambdaExpressionSpecialTokenResolver resolver,
-            LambdaExpressionInterpretationHandler interpretationHandler,
-            VariableSetHandler variables,
-            LambdaExpressionNotationTranslator notationTranslator) {
+    public LambdaCalculusCommandsImpl(
+            LambdaExpressionParsingHandlers parsing, 
+            VariablesAndSpecialTokensHandlers specialTokenHandlers, 
+            Map<String, String> helpTexts) {
+        Objects.nonNull(parsing);
+        Objects.nonNull(specialTokenHandlers);
+        Objects.nonNull(helpTexts);
         
-        // null checks here.
+        this.parsing = parsing;
+        this.specialTokenHandlers = specialTokenHandlers;
+        this.helpTexts = helpTexts;
         
-        this.reversedRPNParser = reversedRPNParser;
-        this.pnParser = parser;
-        this.resolver = resolver;
-        this.interpretationHandler = interpretationHandler;
-        this.variables = variables;
-        this.notationTranslator = notationTranslator;
+        pnDeserializer = i -> handle(i, parsing.pnParser());
+        rpnDeserializer = i -> {
+            var root = specialTokenHandlers.notationTranslator().RPNToReversedRPN(i);
+
+            return handle(root, parsing.reversedRPNParser());
+        };
+        infixDeserializer = i -> {
+            var rpn = specialTokenHandlers.notationTranslator().InfixToRPN(i);
+            var root = specialTokenHandlers.notationTranslator().RPNToReversedRPN(rpn);
+
+            return handle(root, parsing.reversedRPNParser());
+        };
+        
+        this.activeDeserializer = rpnDeserializer;
+        this.activeSerializer = parsing.RPNSerializer();
     }
-    
-    @Override
-    public String print(List<String> unhandledExpression) {
+     
+    public String printTree(List<String> unhandledExpression) {
         try
         {
-            var root = handle(unhandledExpression, pnParser);
+            var root = handle(unhandledExpression, parsing.pnParser());
             
             var buffer = new StringBuilder(99);
             
@@ -63,14 +121,28 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
             return e.toString();
         }
     }
+    
+    @Override
+    public String print(List<String> unhandledExpression) {
+        try
+        {
+            var root = activeDeserializer.apply(unhandledExpression);
+            
+            return TokenIterableToString(activeSerializer.serializeRoot(root).toList());
+        }
+        catch(IllegalArgumentException e)
+        {
+            return e.toString();
+        }
+    }
 
     @Override
     public String print(List<String> unhandledExpression, String typeName) {
         try
         {
-            var root = handle(unhandledExpression, pnParser);
+            var root = handle(unhandledExpression, parsing.pnParser());
             
-            return interpretationHandler.interpret(typeName, root);
+            return specialTokenHandlers.interpretationHandler().interpret(typeName, root);
         }
         catch(IllegalArgumentException | UnsupportedOperationException e)
         {
@@ -80,7 +152,7 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
 
     @Override
     public String list(String argument) {
-        return variables.listVariables(argument);
+        return specialTokenHandlers.variables().listVariables(argument);
     }
 
     @Override
@@ -102,10 +174,10 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
                     return set(varName, root);
                 }
                 case "infix" -> {
-                    var rpn = notationTranslator.translateInfixToRPN(unhandledExpression);
-                    root = notationTranslator.translateRPNToPN(rpn);
+                    var rpn = specialTokenHandlers.notationTranslator().InfixToRPN(unhandledExpression);
+                    root = specialTokenHandlers.notationTranslator().RPNToReversedRPN(rpn);
                 }
-                case "RPN" -> root = notationTranslator.translateRPNToPN(unhandledExpression);
+                case "RPN" -> root = specialTokenHandlers.notationTranslator().RPNToReversedRPN(unhandledExpression);
                 default -> {
                     return Optional.of("Unknown notation type \"" + expressionType + "\".");
                 }
@@ -123,9 +195,9 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public String delete(String varName) {
         try
         {
-            variables.remove(varName);
+            specialTokenHandlers.variables().remove(varName);
             
-            if (!variables.contains(varName))
+            if (!specialTokenHandlers.variables().contains(varName))
             
                 return varName + " doesn't exist.";
                 
@@ -141,9 +213,9 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public Optional<String> set(String varName, List<String> unhandledExpression) {
         try
         {
-            var root = handle(unhandledExpression, pnParser);
+            var root = activeDeserializer.apply(unhandledExpression);
             
-            variables.put(varName, root);
+            specialTokenHandlers.variables().put(varName, root);
             
             return Optional.empty();
         }
@@ -153,13 +225,14 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
         }  
     }
     
+    
     private Optional<String> setRPN(String varName, List<String> unhandledExpression)
     {
         try
         {
-            var root = handle(unhandledExpression, reversedRPNParser);
+            var root = handle(unhandledExpression, parsing.reversedRPNParser());
             
-            variables.put(varName, root);
+            specialTokenHandlers.variables().put(varName, root);
             
             return Optional.empty();
         }
@@ -171,8 +244,95 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     
     private LambdaTermRoot handle(List<String> unhandledExpression, LambdaExpressionTokenHandler parser) throws IllegalArgumentException
     {
-        var tokens = resolver.handle(unhandledExpression);
+        var tokens = specialTokenHandlers.resolver().handle(unhandledExpression);
 
         return parser.parse(tokens);
+    }
+    
+     
+    @Override
+    public String importFile(String filepath) {
+
+        try (java.io.FileReader reader = new FileReader(filepath)) {
+            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> rawStrings = new Gson().fromJson(reader, type);
+            
+            for (var name : rawStrings.keySet())
+            {
+                var tokens = specialTokenHandlers.tokenSplitter().apply(rawStrings.get(name));
+                
+                var root = activeDeserializer.apply(tokens);
+            
+                specialTokenHandlers.variables().put(name, root);
+            }
+                      
+        } catch (IOException ex) {
+            return ex.getMessage();
+        }
+        
+        return "Successfully imported file \"" + filepath + "\".";
+    }
+
+    @Override
+    public String exportFile(String filepath) {
+
+        var gson = new Gson();
+        
+        var map = new HashMap<String, String>(32);
+        
+        var globalVars = specialTokenHandlers.variables().getVariables();
+        
+        for(var name : globalVars.keySet())
+        {
+            var root = globalVars.get(name);
+                       
+            var stream = activeSerializer.serializeRoot(root);
+            
+            map.put(name, LambdaTermSerializationUtil.TokenIterableToString(stream.toList()));
+        }
+        
+        String json = gson.toJson(map);
+        
+        try (var writer = new FileWriter(filepath)) {
+            
+            writer.write(json);
+            
+        } catch (IOException ex) {
+            return ex.getMessage();
+        }
+        
+        return "Successfully exported to file \"" + filepath + "\".";        
+    }
+
+    @Override
+    public String help(String commandName) {
+        if (helpTexts.containsKey(commandName))
+            return helpTexts.get(commandName);
+        
+        return CommandsUtil.getCommandNotExistText(commandName);
+    }
+
+    @Override
+    public String deleteAll() {
+        return specialTokenHandlers.variables().removeAll();
+    }
+
+    @Override
+    public void notation(Consumer<? super InputOutputNotationSelection> selection) {
+              
+        var selector = new InputOutputNotationSelection()
+        {
+            @Override
+            public void input(Consumer<? super PnRpnInfixNotationSelection> selection) {
+                selection.accept(inputSelector);
+            }
+
+            @Override
+            public void output(Consumer<? super PnRpnNotationSelection> selection) {
+                selection.accept(outputSelector);
+            }          
+        };
+        
+        selection.accept(selector);
     }
 }

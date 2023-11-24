@@ -67,7 +67,7 @@ public final class BuiltInVariables {
         var dict = new HashMap<String, BuiltInRoot>(25);
         
         Variable.putAll(dict,
-                identity(), trueVal(), falseVal(), voidVal(), nullVal(),
+                identity(), trueVal(), falseVal(), zero(), voidVal(), nullVal(),
                 and(), or(), not(), xor(), getIf(),
                 succ(), add(), mul(), pow(),
                 pred(), sub(), div(),
@@ -79,7 +79,7 @@ public final class BuiltInVariables {
     }
     private Variable identity()
     {
-        return new Variable("ID", parser.parse("/i i"), 1);
+        return new Variable("ID", parser.parse("/i i"), 0);
     }
     
     private Variable trueVal()
@@ -90,6 +90,11 @@ public final class BuiltInVariables {
     private Variable falseVal()
     {
         return new Variable("false", parser.parse(FALSE_STRING), 0);
+    }
+    
+    private Variable zero()
+    {
+        return new Variable("0", parser.parse(FALSE_STRING), 0);
     }
     
     private Variable voidVal()
@@ -119,7 +124,7 @@ public final class BuiltInVariables {
         
     private Variable xor()
     {
-        return new Variable("^", parser.parse("/a /b a ( " + wrap(NOT_STRING) + " b ) b"), 2, 20);
+        return new Variable("^^", parser.parse("/a /b a ( " + wrap(NOT_STRING) + " b ) b"), 2, 20);
     }
     
     private Variable getIf()

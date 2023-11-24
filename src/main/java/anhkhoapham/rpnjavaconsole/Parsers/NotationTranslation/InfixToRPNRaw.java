@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package anhkhoapham.rpnjavaconsole.Parsers;
+package anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation;
 
 import anhkhoapham.rpnjavaconsole.Validation.Rules;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInRoot;
@@ -28,9 +28,8 @@ public final class InfixToRPNRaw implements LambdaExpressionNotationTranslator {
         this.dict = dict;
     }
     
-    // TODO: Implement Infix -> RPN
     @Override
-    public List<String> translateInfixToRPN(List<String> infix) throws IllegalArgumentException, UnsupportedOperationException
+    public List<String> InfixToRPN(List<String> infix) throws IllegalArgumentException, UnsupportedOperationException
     {        
         var outputQueue = new ArrayList<String>(infix.size());
         

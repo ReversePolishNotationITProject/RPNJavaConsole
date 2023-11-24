@@ -2,8 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package anhkhoapham.rpnjavaconsole.Parsers;
+package anhkhoapham.rpnjavaconsole.Parsers.VariablesHandler;
 
+import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionSpecialTokenResolver;
 import anhkhoapham.rpnjavaconsole.Validation.Rules;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInRoot;
 import java.util.ArrayDeque;
@@ -60,7 +61,7 @@ public final class BuiltInVariablesInjector implements LambdaExpressionSpecialTo
                     if (argumentCountStack.isEmpty())
                         throw new IllegalArgumentException("Unexpected \")\".");
                     
-                    if (argumentCountStack.peekLast() == leftBracketNumber) break;
+                    if (argumentCountStack.removeLast() == leftBracketNumber) break;
                     
                     list.add(")");
                 }
