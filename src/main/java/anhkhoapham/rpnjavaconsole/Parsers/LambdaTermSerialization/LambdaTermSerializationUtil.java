@@ -4,8 +4,6 @@
  */
 package anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization;
 
-import java.util.stream.Stream;
-
 /**
  *
  * @author Khoapa

@@ -26,13 +26,13 @@
             <artifactId>re2j</artifactId>
             <version>1.6</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.github.ReversePolishNotationITProject</groupId>
             <artifactId>LambdaCalculusJava</artifactId>
-            <version>0.1.3-SNAPSHOT</version>
+            <version>0.1.6-SNAPSHOT</version>
         </dependency>
-        
+                   
         <dependency>
 	    <groupId>com.github.ArsenalAlex108</groupId>
 	    <artifactId>CRTPNodesLibraryJava</artifactId>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>com.github.ReversePolishNotationITProject</groupId>
             <artifactId>LambdaExpressionInterpreter</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
+            <version>0.1.2-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.github.ReversePolishNotationITProject</groupId>

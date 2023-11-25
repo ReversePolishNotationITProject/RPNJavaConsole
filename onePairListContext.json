@@ -1,0 +1,15 @@
+{
+	"onePairListContext": [
+		
+		"(",
+			"( /head /tail /def def",
+				"(false)",
+				"(/l l (/_ /_ /_ false) true)",
+				"(/x /y /op op x y)",
+				"head",
+				"tail",
+				"(/l /n head (n tail l))",		
+			")",
+		")"
+	]
+}

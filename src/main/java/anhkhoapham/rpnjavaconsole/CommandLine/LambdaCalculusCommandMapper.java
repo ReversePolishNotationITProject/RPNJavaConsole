@@ -49,7 +49,14 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
             
             if (!commandMap.containsKey(command)) return CommandsUtil.getCommandNotExistText(command);
             
-            return commandMap.get(command).apply(tokens);
+            try
+            {
+                return commandMap.get(command).apply(tokens);
+            }
+            catch (IllegalArgumentException | UnsupportedOperationException e)
+            {
+                return e.getMessage();
+            }
         }
         else
         {
@@ -167,42 +174,42 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         
         var notationToken = originalTokens.get(2).substring(1);
         
-     
-        switch (flowToken)
-        {
-            case "input" ->
-            {              
-                Consumer<PnRpnInfixNotationSelection> notationSelector;
-                
-                switch (notationToken) {
-                    case "PN" -> notationSelector = i -> i.PN();
-                    case "infix" -> notationSelector = i -> i.infix();
-                    case "RPN" -> notationSelector = i -> i.RPN();
-                    default -> {
-                        return "Notation \"" + originalTokens.get(2) + "\" not found.";
-                    }
+        switch (flowToken) {
+            case "input" ->                 {
+                    Consumer<PnRpnInfixNotationSelection> notationSelector;
+                    switch (notationToken) {
+                        case "PN" -> notationSelector = i -> i.PN();
+                        case "infix" -> notationSelector = i -> i.infix();
+                        case "RPN" -> notationSelector = i -> i.RPN();
+                        default -> {
+                            return "Notation \"" + originalTokens.get(2) + "\" not found.";
+                        }
+                    }       commands.notation(i -> i.input(notationSelector));
                 }
-                               
-                commands.notation(i -> i.input(notationSelector));
-            }
-            case "output" ->
-            {
+            case "output", "both" -> {
                 Consumer<PnRpnNotationSelection> notationSelector;
                 
                 switch (notationToken) {
                     case "PN" -> notationSelector = i -> i.PN();
                     case "RPN" -> notationSelector = i -> i.RPN();
+                    case "infix" -> {
+                        return "infix not yet support for output.";
+                    }
                     default -> {
                         return "Notation \"" + originalTokens.get(2) + "\" not found.";
                     }
-                }
-                              
-                commands.notation(i -> i.output(notationSelector));
+                }       
+                
+                if ("output".equals(flowToken)) {
+                    commands.notation(i -> i.output(notationSelector));
+                }       
+                commands.notation(i -> i.both(notationSelector));
             }
-            default -> { 
+            default ->  {
                 return "Option \"" + DISCRIMINATOR + flowToken + "\" not found.";
-            }
+                }
         }
+
         
         return "Successfully set notation of " + flowToken + " to " + notationToken + "."; 
     }

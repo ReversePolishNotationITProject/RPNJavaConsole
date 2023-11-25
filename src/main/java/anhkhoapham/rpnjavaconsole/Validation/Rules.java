@@ -4,7 +4,7 @@
  */
 package anhkhoapham.rpnjavaconsole.Validation;
 
-import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.TokenAnalyzer;
+import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.TokenAnalyzer;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCARD;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInRoot;
 import java.util.Collection;

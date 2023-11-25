@@ -4,8 +4,8 @@
  */
 package anhkhoapham.rpnjavaconsole.CommandLine;
 
+import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.LambdaExpressionTokenHandler;
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
-import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.LambdaExpressionTokenHandler;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.InputOutputNotationSelection;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnInfixNotationSelection;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnNotationSelection;
@@ -16,6 +16,7 @@ import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSeri
 import static anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil.TokenIterableToString;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -195,12 +196,11 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public String delete(String varName) {
         try
         {
-            specialTokenHandlers.variables().remove(varName);
-            
             if (!specialTokenHandlers.variables().contains(varName))
             
-                return varName + " doesn't exist.";
-                
+                return varName + " doesn't exist.";            
+            
+            specialTokenHandlers.variables().remove(varName);             
             return varName + " success fully removed.";
         }
         catch(IllegalArgumentException e)
@@ -251,22 +251,39 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     
      
     @Override
+    @SuppressWarnings({"unchecked", "null"})
     public String importFile(String filepath) {
 
         try (java.io.FileReader reader = new FileReader(filepath)) {
-            Type type = new TypeToken<Map<String, String>>(){}.getType();
-            Map<String, String> rawStrings = new Gson().fromJson(reader, type);
+            Type type = new TypeToken<Map<String, Object>>(){}.getType();
+            Map<String, Object> rawStrings = new Gson().fromJson(reader, type);
             
             for (var name : rawStrings.keySet())
             {
-                var tokens = specialTokenHandlers.tokenSplitter().apply(rawStrings.get(name));
+                var value = rawStrings.get(name);
                 
+                String str;
+                
+                if (value instanceof Iterable list)
+                {
+                    str = "";
+                    for (var line : list)
+                        str += line + " ";
+                }
+                else if (value instanceof String strvalue)
+                    str = strvalue;
+                else
+                    throw new IllegalArgumentException("Invalid type: " + value.getClass() + ". Type must either be String or String[].");
+                
+                var tokens = specialTokenHandlers.tokenSplitter().apply(str);
+                
+
                 var root = activeDeserializer.apply(tokens);
             
                 specialTokenHandlers.variables().put(name, root);
             }
                       
-        } catch (IOException ex) {
+        } catch (IOException | JsonSyntaxException ex) {
             return ex.getMessage();
         }
         
@@ -277,6 +294,7 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public String exportFile(String filepath) {
 
         var gson = new Gson();
+        
         
         var map = new HashMap<String, String>(32);
         
@@ -297,7 +315,7 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
             
             writer.write(json);
             
-        } catch (IOException ex) {
+        } catch (IOException | JsonSyntaxException ex) {
             return ex.getMessage();
         }
         
@@ -331,6 +349,12 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
             public void output(Consumer<? super PnRpnNotationSelection> selection) {
                 selection.accept(outputSelector);
             }          
+
+            @Override
+            public void both(Consumer<? super PnRpnNotationSelection> selection) {
+                selection.accept(inputSelector);
+                selection.accept(outputSelector);
+            }
         };
         
         selection.accept(selector);

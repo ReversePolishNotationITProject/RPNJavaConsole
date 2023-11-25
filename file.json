@@ -1,1 +1,6 @@
-{"a":"f ( f x [ ( x f ) f /x /f ] ) [ x f /x /f ] /x /f"}
+{
+	"a": [
+		"f ( f x [ ( x f ) f /x /f ] )",
+		" [ x f /x /f ] /x /f"
+	]
+}

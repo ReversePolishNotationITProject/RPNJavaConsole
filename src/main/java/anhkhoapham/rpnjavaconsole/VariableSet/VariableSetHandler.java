@@ -5,7 +5,7 @@
 package anhkhoapham.rpnjavaconsole.VariableSet;
 
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
-import anhkhoapham.lambdacalculus.LambdaExpressonTree.Parser.ExternalLambdaTreeParser;
+import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.ExternalLambdaTreeParser;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpreter;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCARD;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
@@ -42,22 +42,6 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
     public boolean contains(String varName)
     {
         return variables.containsKey(varName);
-    }
-    
-    public Optional<LambdaTermRoot> tryGet(String varName, boolean getReference)
-    {
-        if (builtIn.containsKey(varName)) {
-
-            return Optional.of(new LambdaTermRefRoot(varName, () -> builtIn.get(varName).root()));
-        } else if (variables.containsKey(varName)) {
-
-            if (getReference) {
-                return Optional.of(new LambdaTermRefRoot(varName, () -> variables.get(varName)));
-            } else {
-                return Optional.of(variables.get(varName));
-            }
-        }
-        return Optional.empty();
     }
     
     public void put(String varName, LambdaTermRoot root) throws IllegalArgumentException
@@ -140,9 +124,11 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
             try {
                 int value = Integer.parseInt(variable);
 
+                var num = Integer.toString(value);
+                
                 if (ref) {
-                    return new LambdaTermRefRoot(Integer.toString(value),
-                            () -> interpreter.translateInt(value));
+                    return new LambdaTermRefRoot(num,
+                            () -> interpreter.translateInt(value), false, num);
                 } else {
                     return interpreter.translateInt(value);
                 }
@@ -150,7 +136,10 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
                 throw new IllegalArgumentException(e);
             }
         } else if (ref) {
-            return new LambdaTermRefRoot(variable, () -> get(variable));
+            if (builtIn.containsKey(variable)) {
+                return new LambdaTermRefRoot(variable, () -> builtIn.get(variable).root(), true, variable);
+            }
+            return new LambdaTermRefRoot(variable, () -> variables.get(variable), true);         
         }
         return get(variable);
     }

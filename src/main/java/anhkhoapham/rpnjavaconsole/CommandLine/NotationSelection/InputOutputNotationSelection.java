@@ -15,4 +15,6 @@ public interface InputOutputNotationSelection {
     void input(Consumer<? super PnRpnInfixNotationSelection> selection);
     
     void output(Consumer<? super PnRpnNotationSelection> selection);
+    
+    void both(Consumer<? super PnRpnNotationSelection> selection); 
 }
