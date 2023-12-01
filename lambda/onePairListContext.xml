@@ -7,7 +7,7 @@
         ((false list) monad /list)          
         (true list /list)              
         (
-            ((_tail i /i) list true n /n /list)
+            ((_tail l /l) (list monad) _head n /n /list)
             (_tail)
             (_head)
             ((i list func /func) monad /i /list)

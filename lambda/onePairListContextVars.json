@@ -8,7 +8,9 @@
 				"(/x /y /op op x y)",
 				"head",
 				"tail",
-				"(/l /n head (n tail l))",		
+				"(/l /n head (n tail l))",
+				"(/l l true)",
+				"(/l l false)",		
 			")",
 		")"
 	]
