@@ -68,7 +68,7 @@ public class CommandsUtil {
         
         +("        $print $[int | bool | char] [expression]\n\n")
         
-        +("    Result: prints the interpretion of the expression as that data type, if possible.\n\n");
+        +("    Result: prints the interpretation of the expression as that data type, if possible.\n\n");
     }
     
     public static String getListCommandHelp()
@@ -82,7 +82,7 @@ public class CommandsUtil {
         +("    Arguments:\n\n")
         
         +("        $builtIn: built-in, readonly variables.\n")
-        +("        $mutable: user defined variables.\n")
+        +("        $mutables: user defined variables.\n")
         +("        $all (default): all defined variables.\n\n")
         
         +("    Result: list out defined variables.\n\n");
@@ -105,13 +105,13 @@ public class CommandsUtil {
         
         +("    Usage:\n\n")
         
-        +("        [delete] [varName]\n\n")
+        +("        $delete [varName]\n\n")
                 
         +("    Result: [varName] is deleted, if possible.\n\n")
         
         +("    Usage:\n\n")
         
-        +("        [delete] $all\n\n")
+        +("        $delete $all\n\n")
                 
         +("    Result: delete all mutable variables.\n\n");
     }
@@ -153,7 +153,7 @@ public class CommandsUtil {
 
                         $export [filepath]
 
-                    Result: the json / XML file containing a dictionary of variables.
+                    Result: the Json / XML file containing a dictionary of variables.
                            
                 """;        
     }
@@ -180,15 +180,15 @@ public class CommandsUtil {
                    
                     Usage: 
                
-                        $notation $input $[PN | infix | RPN] 
+                        $notation $[input|both] $[PN | infix | RPN] 
                     
-                    Result: changes the notation of command line inputs and json imports.
+                    Result: changes the notation of command line inputs and json imports, or also prints and exports.
 
                     Usage:                
                 
                         $notation $output $[PN | RPN]
                 
-                    Result: changes the notation of command line prints and json exports.
+                    Result: changes the notation of command line prints and json/ xml exports.
                                        
                 """;
     }
