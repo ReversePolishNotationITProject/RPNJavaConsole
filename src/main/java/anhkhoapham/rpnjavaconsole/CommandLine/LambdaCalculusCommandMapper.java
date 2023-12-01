@@ -78,6 +78,7 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
         map.put("help", tokens -> handleHelp(tokens));
         map.put("import", tokens -> commands.importFile(tokens.get(1)));
         map.put("export", tokens -> commands.exportFile(tokens.get(1)));
+        map.put("serialize", tokens -> handleSerialize(tokens));
         map.put("notation", tokens -> handleNotation(tokens));
         
         return map;
@@ -160,6 +161,14 @@ public final class LambdaCalculusCommandMapper implements Function<String, Strin
             return commands.help();
         
         return commands.help(originalTokens.get(1));
+    }
+    
+    private String handleSerialize(List<String> originalTokens)
+    {
+        if (originalTokens.size() < 3) 
+            return "ERROR: Insufficient argument length for command \"serialize\", expected at least 3 arguments. ";
+
+        return commands.serialize(originalTokens.get(1), originalTokens.subList(2, originalTokens.size()));
     }
     
     private String handleNotation(List<String> originalTokens)

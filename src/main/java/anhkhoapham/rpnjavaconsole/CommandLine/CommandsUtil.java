@@ -113,7 +113,7 @@ public class CommandsUtil {
         
         +("        [delete] $all\n\n")
                 
-        +("    Result: delete all mutable variables.");
+        +("    Result: delete all mutable variables.\n\n");
     }
     
     public static String getParseCommandHelp()
@@ -153,8 +153,24 @@ public class CommandsUtil {
 
                         $export [filepath]
 
-                    Result: the json file containing a dictionary of variables.
+                    Result: the json / XML file containing a dictionary of variables.
+                           
                 """;        
+    }
+
+    
+    public static String getSerializeHelp()
+    {
+        return  """
+                Serialize the expression to a file.
+                    
+                    Usage:
+
+                        $serialize [filepath] [expression]
+
+                    Result: the XML file containing the expression.
+                              
+                """;          
     }
     
     public static String getNotationCommandHelp()
@@ -173,10 +189,39 @@ public class CommandsUtil {
                         $notation $output $[PN | RPN]
                 
                     Result: changes the notation of command line prints and json exports.
-                               
+                                       
                 """;
     }
     
+    public static String getCurlyBracketsHelp() {
+        return  """
+                Curly brackets are used to obtain foreign expression.
+                   
+                    Usage: 
+               
+                        { [varName] }
+                    
+                    Result: the expression is obtained from global variable [varName] at parsing time.
+                    An exception is thrown if that variable does not exist.
+
+                    Usage:                
+                
+                        { ref [varName] }                        
+                
+                    Result: create an object that references global variable [varName].
+                    The global variable does not need to exist at parsing time, but must does so at invocation time.
+                    If the global variable is updated, the obtained expression is updated as well.
+                
+                    Usage:                
+                                
+                        { file [filepath] }                        
+
+                    Result: create an object that, when invoked, will deserialize the file to obtain the expression.
+                    It is the same as the use above, but for expressions stored in files.
+                    The file MUST contain a single expression in XML, not a dictionary containing global variables.
+                              
+                """;        
+    }
 
     /**
      * @return the helpTextMap

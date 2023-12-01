@@ -83,6 +83,14 @@ public interface LambdaCalculusCommands {
      */
     String exportFile(String filepath);
     
+    /**
+     * $serialize [filepath] [expression]
+     * @param filepath
+     * @param tokens
+     * @return 
+     */
+    String serialize(String filepath, List<String> tokens);
+    
     void notation(Consumer<? super InputOutputNotationSelection> selection);
     
     /**
@@ -104,6 +112,7 @@ public interface LambdaCalculusCommands {
                 + CommandsUtil.getParseCommandHelp()
                 + CommandsUtil.getImportCommandHelp()
                 + CommandsUtil.getExportCommandHelp()
+                + CommandsUtil.getCurlyBracketsHelp()
                 + CommandsUtil.getNotationCommandHelp();
     }
 }

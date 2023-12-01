@@ -9,6 +9,7 @@ import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.LambdaExpressionPa
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.LambdaExpressionTokenHandler;
 import anhkhoapham.rpnjavaconsole.Dependency.CommandMapperBuilder;
 import static anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil.TokenIterableToString;
+import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.RPNToReversedRPN;
 import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
 import java.util.List;
 import java.util.function.Function;
@@ -71,10 +72,10 @@ public class LambdaTermNodeSerializerTest {
     public void testRPNSerializeRoot() {
         System.out.println("serializeRoot");
         
-        var expResult = "( c a b ) [ i /i ] /c /b /a";
-        var input = "/a /b /c [ /i i ] ( b c a )";
+        var expResult = "( ( i /i ) c a a ) [ i /i ] /c /b /a";
+        var input = RPNToReversedRPN.translate(new TokenSplitter().apply(expResult));
         
-        LambdaTermRoot parameterNode = pnParser.parse(input);
+        LambdaTermRoot parameterNode = reversedRPNParser.parse(input);
 
         var result = TokenIterableToString(rpnSerializer.serializeRoot(parameterNode).toList());
         System.out.println(expResult);

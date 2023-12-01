@@ -175,7 +175,7 @@ public final class CommandMapperBuilder {
         );
         
         commands = new LambdaCalculusCommandsImpl(
-                parsers, specialTokenHandlers, CommandsUtil.getHelpTextMap());
+                parsers, specialTokenHandlers, CommandsUtil.getHelpTextMap(), i -> importer.setDeserializer(i));
                
         Function<String, String> result = new LambdaCalculusCommandMapper(commands, new TokenSplitter());
         

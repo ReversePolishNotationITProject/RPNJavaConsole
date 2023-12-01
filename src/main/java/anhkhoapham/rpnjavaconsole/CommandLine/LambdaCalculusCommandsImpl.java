@@ -9,12 +9,17 @@ import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.InputOutputNotationSelection;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnInfixNotationSelection;
 import anhkhoapham.rpnjavaconsole.CommandLine.NotationSelection.PnRpnNotationSelection;
+import anhkhoapham.rpnjavaconsole.Parsers.Groupings.Host;
 import anhkhoapham.rpnjavaconsole.Parsers.Groupings.LambdaExpressionParsingHandlers;
 import anhkhoapham.rpnjavaconsole.Parsers.Groupings.VariablesAndSpecialTokensHandlers;
+import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermDeserializer;
 import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermNodeSerializer;
 import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil;
 import static anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermSerializationUtil.TokenIterableToString;
+import anhkhoapham.rpnjavaconsole.Validation.Rules;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
@@ -28,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  *
@@ -41,27 +45,28 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     private final VariablesAndSpecialTokensHandlers specialTokenHandlers;
     private final Map<String, String> helpTexts;
 
-    private Function<List<String>, LambdaTermRoot> activeDeserializer;
     private LambdaTermNodeSerializer activeSerializer;
     
-    private final Function<List<String>, LambdaTermRoot> pnDeserializer;
-    private final Function<List<String>, LambdaTermRoot> rpnDeserializer;   
-    private final Function<List<String>, LambdaTermRoot> infixDeserializer;
+    private Host<LambdaTermDeserializer> activeDeserializerHost = new Host<>();
+    
+    private final LambdaTermDeserializer pnDeserializer;
+    private final LambdaTermDeserializer rpnDeserializer;   
+    private final LambdaTermDeserializer infixDeserializer;
 
     private final PnRpnInfixNotationSelection inputSelector = new PnRpnInfixNotationSelection() {
         @Override
         public void infix() {
-            activeDeserializer = infixDeserializer;
+            activeDeserializerHost.setItem(infixDeserializer);
         }
 
         @Override
         public void PN() {
-            activeDeserializer = pnDeserializer;
+            activeDeserializerHost.setItem(pnDeserializer);
         }
 
         @Override
         public void RPN() {
-            activeDeserializer = rpnDeserializer;
+            activeDeserializerHost.setItem(rpnDeserializer);
         }
     };
 
@@ -80,7 +85,8 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public LambdaCalculusCommandsImpl(
             LambdaExpressionParsingHandlers parsing, 
             VariablesAndSpecialTokensHandlers specialTokenHandlers, 
-            Map<String, String> helpTexts) {
+            Map<String, String> helpTexts,
+            Consumer<LambdaTermDeserializer>... observers) {
         Objects.nonNull(parsing);
         Objects.nonNull(specialTokenHandlers);
         Objects.nonNull(helpTexts);
@@ -102,8 +108,10 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
             return handle(root, parsing.reversedRPNParser());
         };
         
-        this.activeDeserializer = rpnDeserializer;
         this.activeSerializer = parsing.RPNSerializer();
+        
+        this.activeDeserializerHost.addRange(observers);
+        this.activeDeserializerHost.setItem(rpnDeserializer);
     }
      
     public String printTree(List<String> unhandledExpression) {
@@ -127,7 +135,7 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public String print(List<String> unhandledExpression) {
         try
         {
-            var root = activeDeserializer.apply(unhandledExpression);
+            var root = activeDeserializerHost.getItem().parse(unhandledExpression);
             
             return TokenIterableToString(activeSerializer.serializeRoot(root).toList());
         }
@@ -213,7 +221,11 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public Optional<String> set(String varName, List<String> unhandledExpression) {
         try
         {
-            var root = activeDeserializer.apply(unhandledExpression);
+            var root = activeDeserializerHost.getItem().parse(unhandledExpression);
+            
+            var check = Rules.illegalCharactersCheck(varName, specialTokenHandlers.variables().getBuiltIn().keySet());
+            
+            if (check.isPresent()) return check;
             
             specialTokenHandlers.variables().put(varName, root);
             
@@ -249,77 +261,161 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
         return parser.parse(tokens);
     }
     
-     
+    /**
+     * Get extension of a file, if possible.
+     * @param filepath
+     * @return Format switch label
+     */
+    private String getFormat(String filepath)
+    {
+        if (isFormat(filepath, ".xml")) return "$xml";
+        if (isFormat(filepath, ".json")) return "$json";
+        return null;
+    }
+    
+    private boolean isFormat(String filepath, String extension)
+    {
+        int index = filepath.lastIndexOf(extension);
+        
+        return index > -1 && index == (filepath.length() - extension.length());
+    }
+    
     @Override
     @SuppressWarnings({"unchecked", "null"})
     public String importFile(String filepath) {
 
-        try (java.io.FileReader reader = new FileReader(filepath)) {
-            Type type = new TypeToken<Map<String, Object>>(){}.getType();
-            Map<String, Object> rawStrings = new Gson().fromJson(reader, type);
-            
-            for (var name : rawStrings.keySet())
-            {
-                var value = rawStrings.get(name);
-                
-                String str;
-                
-                if (value instanceof Iterable list)
-                {
-                    str = "";
-                    for (var line : list)
-                        str += line + " ";
-                }
-                else if (value instanceof String strvalue)
-                    str = strvalue;
-                else
-                    throw new IllegalArgumentException("Invalid type: " + value.getClass() + ". Type must either be String or String[].");
-                
-                var tokens = specialTokenHandlers.tokenSplitter().apply(str);
-                
-
-                var root = activeDeserializer.apply(tokens);
-            
-                specialTokenHandlers.variables().put(name, root);
-            }
-                      
-        } catch (IOException | JsonSyntaxException ex) {
-            return ex.getMessage();
-        }
+        String format = getFormat(filepath);
         
-        return "Successfully imported file \"" + filepath + "\".";
+        switch (format)
+        {
+            case "$json" -> {
+                try (java.io.FileReader reader = new FileReader(filepath)) {
+                    Type type = new TypeToken<Map<String, Object>>(){}.getType();
+                    Map<String, Object> rawStrings = new Gson().fromJson(reader, type);
+
+                    for (var name : rawStrings.keySet())
+                    {
+                        var value = rawStrings.get(name);
+
+                        String str;
+
+                        if (value instanceof Iterable list)
+                        {
+                            str = "";
+                            for (var line : list)
+                                str += line + " ";
+                        }
+                        else if (value instanceof String strvalue)
+                            str = strvalue;
+                        else
+                            throw new IllegalArgumentException("Invalid type: " + value.getClass() + ". Type must either be String or String[].");
+
+                        var tokens = specialTokenHandlers.tokenSplitter().apply(str);
+                        
+                        
+                        var root = activeDeserializerHost.getItem().parse(tokens);
+
+                        specialTokenHandlers.variables().put(name, root);
+                    }
+
+                } catch (IOException | JsonSyntaxException ex) {
+                    return ex.getMessage();
+                }
+
+                return "Successfully imported file \"" + filepath + "\".";
+            }
+            
+            case "$xml" -> {
+                try (java.io.FileReader reader = new FileReader(filepath)) {
+                    
+                    Map<String, String> rawStrings = new XmlMapper().readValue(
+                            reader, new TypeReference<Map<String, String>>() {});
+
+                    for (var name : rawStrings.keySet())
+                    {
+                        var tokens = specialTokenHandlers.tokenSplitter().apply(rawStrings.get(name));                        
+                        var root = activeDeserializerHost.getItem().parse(tokens);
+
+                        specialTokenHandlers.variables().put(name, root);
+                    }
+                } catch (IOException | JsonSyntaxException ex) {
+                    return ex.getMessage();
+                }                
+                        
+                return "Successfully imported file \"" + filepath + "\".";                
+            }
+            default -> {
+                return "File format not supported.";
+            }
+        }
     }
 
     @Override
     public String exportFile(String filepath) {
 
-        var gson = new Gson();
-        
-        
-        var map = new HashMap<String, String>(32);
-        
-        var globalVars = specialTokenHandlers.variables().getVariables();
-        
-        for(var name : globalVars.keySet())
+        String format = getFormat(filepath);
+        switch(format)
         {
-            var root = globalVars.get(name);
-                       
-            var stream = activeSerializer.serializeRoot(root);
+            case "$json" -> {
+                var gson = new Gson();
+                
+                
+                var map = new HashMap<String, String>(32);
+                
+                var globalVars = specialTokenHandlers.variables().getVariables();
+                
+                for(var name : globalVars.keySet())
+                {
+                    var root = globalVars.get(name);
+                    
+                    var stream = activeSerializer.serializeRoot(root);
+                    
+                    map.put(name, LambdaTermSerializationUtil.TokenIterableToString(stream.toList()));
+                }
+                
+                String json = gson.toJson(map);
+                
+                try (var writer = new FileWriter(filepath)) {
+                    
+                    writer.write(json);
+                    
+                } catch (IOException | JsonSyntaxException ex) {
+                    return ex.getMessage();
+                }
+                
+                return "Successfully exported to file \"" + filepath + "\".";
+            }
             
-            map.put(name, LambdaTermSerializationUtil.TokenIterableToString(stream.toList()));
-        }
-        
-        String json = gson.toJson(map);
-        
-        try (var writer = new FileWriter(filepath)) {
+            case "$xml" -> {
+                                
+                var map = new HashMap<String, String>(32);
+                
+                var globalVars = specialTokenHandlers.variables().getVariables();
+                
+                for(var name : globalVars.keySet())
+                {
+                    var root = globalVars.get(name);
+                    
+                    var stream = activeSerializer.serializeRoot(root);
+                    
+                    map.put(name, LambdaTermSerializationUtil.TokenIterableToString(stream.toList()));
+                }
+                
+                try (var writer = new FileWriter(filepath)) {  
+                    String xml = new XmlMapper().writeValueAsString(map);              
+                    writer.write(xml);
+                    
+                } catch (IOException | JsonSyntaxException ex) {
+                    return ex.getMessage();
+                }                
+                
+                return "Successfully exported to file \"" + filepath + "\".";                
+            }
             
-            writer.write(json);
-            
-        } catch (IOException | JsonSyntaxException ex) {
-            return ex.getMessage();
-        }
-        
-        return "Successfully exported to file \"" + filepath + "\".";        
+            default -> {
+                return "File format not supported.";               
+            }
+        }        
     }
 
     @Override
@@ -358,5 +454,23 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
         };
         
         selection.accept(selector);
+    }
+
+    @Override
+    public String serialize(String filepath, List<String> tokens) {
+        
+        var root = activeDeserializerHost.getItem().parse(tokens);
+        
+        var result = activeSerializer.serializeRoot(root);
+        
+        try (var writer = new FileWriter(filepath)) {  
+                    String xml = new XmlMapper().writeValueAsString(TokenIterableToString(result.toList()));              
+                    writer.write(xml);
+                    
+        } catch (IOException | JsonSyntaxException ex) {
+            return ex.getMessage();
+        }                
+                
+        return "Successfully exported to file \"" + filepath + "\".";        
     }
 }

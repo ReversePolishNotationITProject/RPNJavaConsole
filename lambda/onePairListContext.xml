@@ -1,0 +1,22 @@
+<String>
+<!-- RPN -->
+<!-- PARAMS: /nil (6) /_isnil /_prepend /_head /_tail /_index (1)  -->
+(
+    (object _member /_member /object)
+    (
+        ((false list) monad /list)          
+        (true list /list)              
+        (
+            ((_tail i /i) list true n /n /list)
+            (_tail)
+            (_head)
+            ((i list func /func) monad /i /list)
+            ((true false 3) false list /list)            
+            (false monad)
+
+<!-- Elements are in reverse order.-->
+
+        DEF /DEF /_head /_tail)
+    /monad)
+) 
+</String>

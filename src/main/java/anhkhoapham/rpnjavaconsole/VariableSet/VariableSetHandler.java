@@ -7,8 +7,16 @@ package anhkhoapham.rpnjavaconsole.VariableSet;
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.ExternalLambdaTreeParser;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpreter;
+import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermDeserializer;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCARD;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
+import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.gson.JsonSyntaxException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +27,7 @@ import java.util.Optional;
  */
 public final class VariableSetHandler implements ExternalLambdaTreeParser {
 
+    private LambdaTermDeserializer deserializer;
             
     private final Map<String, BuiltInRoot> builtIn;
     
@@ -31,6 +40,9 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
         
         this.builtIn = builtIns;
         this.interpreter = interpreter;
+    }
+    public void setDeserializer(LambdaTermDeserializer deserializer) {
+        this.deserializer = deserializer;
     }
     
     @SuppressWarnings("ReturnOfCollectionOrArrayField")
@@ -117,7 +129,8 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
             throw new IllegalArgumentException("Variable handler expected 1 - 2 arguments.");
         }
 
-        var ref = tokens.length != 1;
+        var ref = tokens.length != 1 && "ref".equals(tokens[0]);
+        var file = tokens.length != 1 && "file".equals(tokens[0]);
         var variable = tokens.length == 1 ? tokens[0] : tokens[1];
 
         if (Character.isDigit(variable.charAt(0))) {
@@ -140,6 +153,8 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
                 return new LambdaTermRefRoot(variable, () -> builtIn.get(variable).root(), true, variable);
             }
             return new LambdaTermRefRoot(variable, () -> variables.get(variable), true);         
+        } else if (file) {
+            return new LambdaTermRefRoot(variable, () -> deserialize(variable), false, "file " + variable);
         }
         return get(variable);
     }
@@ -163,5 +178,24 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
     @Override
     public LambdaTermRoot getMissing(String varName) throws IllegalArgumentException {
         return get(varName);
+    }
+
+    public Map<String, BuiltInRoot> getBuiltIn() {
+        return Collections.unmodifiableMap(builtIn);
+    }
+    
+    private LambdaTermRoot deserialize(String filepath) throws IllegalArgumentException
+    {
+        try (java.io.FileReader reader = new FileReader(filepath)) {
+
+            String expression = new XmlMapper().readValue(reader, String.class);
+
+            var tokens = new TokenSplitter().apply(expression);
+            
+            return deserializer.parse(tokens);
+
+        } catch (IOException | JsonSyntaxException ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 }
