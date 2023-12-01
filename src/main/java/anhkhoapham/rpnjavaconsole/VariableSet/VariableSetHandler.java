@@ -4,14 +4,13 @@
  */
 package anhkhoapham.rpnjavaconsole.VariableSet;
 
-import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
 import anhkhoapham.lambdacalculus.LambdaExpressionTree.Parser.ExternalLambdaTreeParser;
+import anhkhoapham.lambdacalculus.LambdaExpressionTree.Root.LambdaTermRoot;
 import anhkhoapham.lambdaexpressioninterpreter.LambdaExpressionInterpreter;
 import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermDeserializer;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCARD;
 import static anhkhoapham.rpnjavaconsole.Validation.SpecialSymbols.DISCRIMINATOR;
 import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.JsonSyntaxException;
 import java.io.FileReader;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  *
@@ -138,13 +136,18 @@ public final class VariableSetHandler implements ExternalLambdaTreeParser {
                 int value = Integer.parseInt(variable);
 
                 var num = Integer.toString(value);
+
+                return new LambdaTermRefRoot(num,
+                    () -> interpreter.translateInt(value), false, num);
                 
+                /*
                 if (ref) {
                     return new LambdaTermRefRoot(num,
                             () -> interpreter.translateInt(value), false, num);
                 } else {
                     return interpreter.translateInt(value);
                 }
+*/
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException(e);
             }

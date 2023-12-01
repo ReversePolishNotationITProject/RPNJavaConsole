@@ -25,7 +25,7 @@ import anhkhoapham.rpnjavaconsole.Parsers.LambdaTermSerialization.LambdaTermNode
 import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.InfixToRPNRaw;
 import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionNotationTranslator;
 import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionSpecialTokenResolver;
-import anhkhoapham.rpnjavaconsole.Parsers.VariablesHandler.BuiltInVariablesInjector;
+import anhkhoapham.rpnjavaconsole.Parsers.BuiltInVariablesInjector;
 import anhkhoapham.rpnjavaconsole.Validation.TokenSplitter;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInRoot;
 import anhkhoapham.rpnjavaconsole.VariableSet.BuiltInVariables;

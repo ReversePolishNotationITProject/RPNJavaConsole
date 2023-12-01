@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package anhkhoapham.rpnjavaconsole.Parsers.VariablesHandler;
+package anhkhoapham.rpnjavaconsole.Parsers;
 
 import anhkhoapham.rpnjavaconsole.Parsers.NotationTranslation.LambdaExpressionSpecialTokenResolver;
 import anhkhoapham.rpnjavaconsole.Validation.Rules;

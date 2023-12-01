@@ -24,6 +24,7 @@ public final class BuiltInVariables {
     private static final String TRUE_STRING = "/a /_ a";
     private static final String FALSE_STRING = "/_ /b b";
     private static final String NOT_STRING = "/p /a /b p b a";
+    private static final String REVERSE_BINARY_STRING = "/p /a /b " + wrap(NOT_STRING) + " ( p a b )";
     private static final String AND_STRING = "/p /q p q p";
     
     private static final String PRED_STRING = "/n /f /x n ( /g /h h ( g f ) ) ( /u x ) ( /i i )"; 
@@ -160,12 +161,12 @@ public final class BuiltInVariables {
     
     private Variable moreThan()
     {
-        return new Variable(">", parser.parse(wrap(NOT_STRING) + " " + wrap(LEQ_STRING)), 2, 50);
+        return new Variable(">", parser.parse(wrap(REVERSE_BINARY_STRING) + " " + wrap(LEQ_STRING)), 2, 50);
     }
     
     private Variable gEQ()
     {
-        return new Variable(">=", parser.parse(wrap(NOT_STRING) + " " + wrap(LESS_STRING)), 2, 50);
+        return new Variable(">=", parser.parse(wrap(REVERSE_BINARY_STRING) + " " + wrap(LESS_STRING)), 2, 50);
     }
     
     
@@ -199,11 +200,10 @@ public final class BuiltInVariables {
         return new Variable("-", parser.parse(SUBTRACT_STRING), 2, 60);
     }
     
-    // TODO: implement this monstrocity.
     private Variable div()
     {
         return new Variable("/", parser.parse(
-                "/u u")
+                "/m /n /f /x m ( " + wrap(SUBTRACT_STRING) + " n ) ( " + wrap(LEQ_STRING)  + " n f ) x")
                 , 2, 70);
     }
     

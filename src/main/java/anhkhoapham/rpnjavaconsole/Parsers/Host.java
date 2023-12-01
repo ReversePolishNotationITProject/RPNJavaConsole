@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package anhkhoapham.rpnjavaconsole.Parsers.Groupings;
+package anhkhoapham.rpnjavaconsole.Parsers;
 
 import java.util.Arrays;
 import java.util.Collection;
