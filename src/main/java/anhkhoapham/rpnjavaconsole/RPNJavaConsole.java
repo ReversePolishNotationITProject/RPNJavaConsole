@@ -16,16 +16,8 @@ import java.util.function.Function;
 public class RPNJavaConsole {
 
     public static void main(String[] args) {
-        String test = "Hello (world), {don't split this} [square brackets]";
         
-        var result = new TokenSplitter().apply(test);
-        
-        for(var value : result)
-        {
-            //System.out.println(value);
-        }
-
-        System.out.println("Reverse Polish Notation Console.");
+        System.out.println("Reverse Polish Notation Console. Input \"$help\" to print help text for all commands.");
         
         Function<String, String> commandInput = CommandMapperBuilder.getCommandMapper();
         

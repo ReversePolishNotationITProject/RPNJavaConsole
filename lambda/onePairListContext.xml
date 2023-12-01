@@ -7,12 +7,12 @@
         ((false list) monad /list)          
         (true list /list)              
         (
-            ((_tail l /l) (list monad) _head n /n /list)
-            (_tail)
-            (_head)
-            ((i list func /func) monad /i /list)
-            ((true false 3) false list /list)            
-            (false monad)
+            ((_tail l /l) (list monad) _head n /n /list) <!-- /_index -->
+            (_tail) <!-- /_tail -->
+            (_head) <!-- /_head -->
+            ((i list func /func) monad /i /list) <!-- /_prepend -->
+            ((true false 3) false list /list) <!-- /_isnil -->            
+            (false monad) <!-- /nil -->
 
 <!-- Elements are in reverse order.-->
 
