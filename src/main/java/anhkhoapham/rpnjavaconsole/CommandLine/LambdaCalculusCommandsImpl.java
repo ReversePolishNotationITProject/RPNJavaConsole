@@ -149,7 +149,7 @@ public class LambdaCalculusCommandsImpl implements LambdaCalculusCommands {
     public String print(List<String> unhandledExpression, String typeName) {
         try
         {
-            var root = handle(unhandledExpression, parsing.pnParser());
+            var root = activeDeserializerHost.getItem().parse(unhandledExpression);
             
             return specialTokenHandlers.interpretationHandler().interpret(typeName, root);
         }
